@@ -321,4 +321,51 @@ public class BookmarksExtension {
 
 ##### Events
 
-to be continued...
+Event can send the signal that specific component has changed own state or some action has performed. To create own event class [GwtEvent](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/GwtEvent.java) should be extended, simultaneously, with event there is should be a event handler. Handler should extends [EventHandler](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/EventHandler.java).
+
+Example of GWT event base on `BookmarksUpdatedEvent`:
+```
+public class BookmarksUpdatedEvent extends GwtEvent<BookmarksUpdatedEvent.BookmarksUpdatedHandler> {
+
+    /**
+     * A listener is notified of changes in bookmarks storage. These changes arise from manipulation of bookmarks storage.
+     */
+    public interface BookmarksUpdatedHandler extends EventHandler {
+
+        /**
+         * Notifies the listener that bookmarks storage has been updated.
+         *
+         * @param event
+         *         instance of {@link BookmarksUpdatedEvent}
+         */
+        void onBookmarksUpdated(BookmarksUpdatedEvent event);
+    }
+
+    private static Type<BookmarksUpdatedHandler> TYPE;
+
+    public static Type<BookmarksUpdatedHandler> getType() {
+        if (TYPE == null) {
+            TYPE = new Type<BookmarksUpdatedHandler>();
+        }
+        return TYPE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Type<BookmarksUpdatedHandler> getAssociatedType() {
+        return TYPE;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void dispatch(BookmarksUpdatedHandler handler) {
+        handler.onBookmarksUpdated(this);
+    }
+}
+
+```
+
+To handle specific events method [EventBus#addHandler](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/web/bindery/event/shared/EventBus.java#L66) should be called. _Note, that EventBus should be injected to be able to subscribe listening to the events._
+
+
+
