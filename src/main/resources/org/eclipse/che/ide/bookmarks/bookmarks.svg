@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+
+    Copyright (c) 2012-2016 Codenvy, S.A.
+    All rights reserved. This program and the accompanying materials
+    are made available under the terms of the Eclipse Public License v1.0
+    which accompanies this distribution, and is available at
+    http://www.eclipse.org/legal/epl-v10.html
+
+    Contributors:
+      Codenvy, S.A. - initial API and implementation
+
+-->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="32px"
+	 height="32px" viewBox="6 6 20 20" enable-background="new 0 0 32 32" xml:space="preserve">
+<g id="bookmarks">
+	<path fill-rule="evenodd" clip-rule="evenodd" fill="#E0B91D" d="M16,8l2.2,5.661l5.8,0.451l-4.44,3.949L20.944,24L16,20.78
+		L11.056,24l1.385-5.939L8,14.112l5.8-0.451L16,8L16,8z M16,13.521l-0.792,2.037l-2.367,0.184l1.816,1.615l-0.524,2.253L16,18.394
+		l1.866,1.216l-0.524-2.253l1.816-1.615l-2.367-0.184L16,13.521z"/>
+</g>
+</svg>
