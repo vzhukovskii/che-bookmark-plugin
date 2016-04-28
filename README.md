@@ -1007,6 +1007,6 @@ Rebuild Eclipse Che with the plugin and see the result:
 
 ### Conclusion 
 
-So, you can see that creating custom plugins to extend Eclipse Che functionality is not as difficult as it looks like. In one hour we have created a custom plugin that manages bookmarks for the files and folders to help the user retrieve them faster in huge project.
+So, you can see that creating custom plugins to extend Eclipse Che functionality is not as difficult as it looks like. In one hour we have created a custom plugin that manages bookmarks for the files and folders to help the user to retrieve them faster in huge project.
 
 The complete code of the given plugin you can find [here](https://github.com/vzhukovskii/che-bookmark-plugin).
