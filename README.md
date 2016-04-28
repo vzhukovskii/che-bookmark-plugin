@@ -2,16 +2,16 @@
 
 #### Introduction
 
-In this article we will consider the aspects of developing an own client side plugin for managing bookmarks in Eclipse Che.
+In this article we will consider the aspects of developing your own client side plugin for managing bookmarks in Eclipse Che.
 
-Bookmark - is the favorite reference for any object. In our case it will be a reference for file or folder for later retrieval in text editor or project explorer. There are much advantages of this feature. One of them is that if you have a big project with thousands of files you may loose focus on main files you worked on, so you can add files into the bookmarks and then easily find them.
+Bookmark - is the favorite reference for any object. In our case it will be a reference for file or folder for later retrieval in text editor or project explorer. There are many advantages of this feature. One of them is that if you have a big project with thousands of files you may loose focus on main files you worked on, so you can add files into the bookmarks and then easily access them.
 
 While developing, any IDE may be used, but we will use Eclipse Che.
 
 So, let's do that together.
 
 Before starting to develop the new plugin, you should understand, that architecturally Eclipse Che consists of two parts, client and server side.
-Client side - is a GWT application written in java, but then compiled into javascript. In this case you should know note, that not all java functions are available. If you are not sure that some functionality correctly emulates in GWT, than you should check official documentation ([JRE Emulation Reference](http://www.gwtproject.org/doc/latest/RefJreEmulation.html))
+Client side - is a GWT application written in java, but then compiled into javascript. In this case you should know, that not all java functions are available. If you are not sure that some functionality correctly emulates in GWT, than you should check official documentation ([JRE Emulation Reference](http://www.gwtproject.org/doc/latest/RefJreEmulation.html))
 
 #### Plugin Structure
 
