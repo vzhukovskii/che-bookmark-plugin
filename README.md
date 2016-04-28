@@ -8,7 +8,7 @@ Bookmark - is the favorite reference for any object. In our case it will be a re
 
 While developing, any IDE may be used, but we will use Eclipse Che.
 
-So, lets do it.
+So, let's do that together.
 
 Before starting to develop the new plugin, you should understand, that architecturally Eclipse Che consists of two parts, client and server side.
 Client side - is a GWT application written in java, but then compiled into javascript. In this case you should know note, that not all java functions are available. If you are not sure that some functionality correctly emulates in GWT, than you should check official documentation ([JRE Emulation Reference](http://www.gwtproject.org/doc/latest/RefJreEmulation.html))
