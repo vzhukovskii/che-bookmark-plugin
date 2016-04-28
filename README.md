@@ -2,20 +2,20 @@
 
 #### Introduction
 
-In this article we will consider the aspects of developing your own client side plugin for managing bookmarks in Eclipse Che.
+In this article we will focus on the aspects of developing your own client side plugin for managing bookmarks in Eclipse Che.
 
-Bookmark - is the favorite reference for any object. In our case it will be a reference for file or folder for later retrieval in text editor or project explorer. There are many advantages of this feature. One of them is that if you have a big project with thousands of files you may loose focus on main files you worked on, so you can add files into the bookmarks and then easily access them.
+Bookmark - is the favorite reference for any object. In our case it will be a reference to a file or folder for later retrieval in text editor or project explorer. There are many advantages of this feature. One of them is that if you have a big project with thousands of files you may loose focus on main files you are working on, so you can add files into the bookmarks and then easily find them.
 
-While developing, any IDE may be used, but we will use Eclipse Che.
+Any IDE may be used while developing, but we will use Eclipse Che.
 
 So, let's do that together.
 
-Before starting to develop the new plugin, you should understand, that architecturally Eclipse Che consists of two parts, client and server side.
-Client side - is a GWT application written in java, but then compiled into javascript. In this case you should know, that not all java functions are available. If you are not sure that some functionality correctly emulates in GWT, than you should check official documentation ([JRE Emulation Reference](http://www.gwtproject.org/doc/latest/RefJreEmulation.html))
+Before starting to develop the new plugin, you should understand, that architecturally Eclipse Che consists of two parts, client side and server side.
+Client side - is a GWT application written in java, but then compiled into javascript. So you should take into account, that not all java functions are available. If you are not sure that some functionality correctly emulates in GWT, than you should check official documentation ([JRE Emulation Reference](http://www.gwtproject.org/doc/latest/RefJreEmulation.html))
 
 #### Plugin Structure
 
-To find out how plugins are arranged in the Eclipse Che you can visit official repository ([plugins](https://github.com/eclipse/che/tree/master/plugins)) and see how they were made. There are a few predefined plugins.
+To find out how plugins are arranged in the Eclipse Che you can visit official repository ([plugins](https://github.com/eclipse/che/tree/master/plugins)) and see how they have been made. There are a few predefined plugins.
 
 But we will start from the scratch. For this we will create an empty maven project and define parent and dependency management in the `pom.xml`
 
@@ -43,11 +43,11 @@ and
    </dependencyManagement>
 ```
 
-Pay attention that we used `4.2.0-RC1-SNAPSHOT` version, so this plugin will be available in this version. This is due the upgrades in the client side api which works with new resource management mechanism (operating with files/folders/projects).
+Pay attention that we have used `4.2.0-RC1-SNAPSHOT` version, so this plugin will be available in this version. This is due to the upgrades in the client side api which works with new resource management mechanism (operating with files/folders/projects).
 
-As the Eclipse Che uses GWT library version of 2.7 the client side can be written uses only java 7. Otherwise the code will not compile.
+As the Eclipse Che uses GWT library 2.7, client side can be written using only java 7. Otherwise the code will not compile.
 
-Here you can see the `pom.xml` content:
+Here you can see the complete `pom.xml` content:
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -182,7 +182,7 @@ public class BookmarksExtension {
 }
 ```
 
-this class is responsible for the registering extension in the runtime. _Note, that each extension in the Eclipse Che should be marked with [Extension](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/extension/Extension.java) annotation._
+This class is responsible for the registering extension in the runtime. _Note, that each extension in the Eclipse Che should be marked with [Extension](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/extension/Extension.java) annotation._
 
 And `org.eclipse.che.ide.bookmarks.BookmarksGinModule`:
 ```
@@ -197,7 +197,7 @@ public class BookmarksGinModule extends AbstractGinModule {
 
 This class is responsible for the registering base components in dependency management framework (Gin). _Note, that each class which registers components to use in dependency management should be annotated with [ExtensionGinModule](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/extension/ExtensionGinModule.java) annotation._
 
-Than, in `src/main/resources` we will create the following file:
+Then, in `src/main/resources` we will create the following file:
 
 `org/eclipse/che/ide/bookmarks/Bookmarks.gwt.xml`
 ```
@@ -217,9 +217,9 @@ Than, in `src/main/resources` we will create the following file:
 </module>
 ```
 
-Current file is included into GWT compilation to allow link client side code with core application.
+Current file is included into GWT compilation to allow linking client side code with core application.
 
-Than we should clone the sources of Eclipse Che ([link](https://github.com/eclipse/che)) and register our plugin into compilation phase by adding maven dependency in `/che/assembly/assembly-ide-war/pom.xml` and registering our `Bookmarks.gwt.xml` in GWT compilation by adding:
+Than we should clone Eclipse Che ([sources](https://github.com/eclipse/che)) and register our plugin into compilation phase by adding maven dependency in `/che/assembly/assembly-ide-war/pom.xml` and registering our `Bookmarks.gwt.xml` in GWT compilation by adding:
 ```
 ...
 <inherits name='org.eclipse.che.ide.bookmarks.Bookmarks'/>
@@ -239,17 +239,17 @@ Lets create a few additional classes which will manage bookmarks.
 Here are the descriptions of each subpackage:
 
 * `org.eclipse.che.ide.bookmarks.actions` contains classes which display actions on the UI. _(Toggle Bookmark and Show Bookmarks)_
-* `org.eclipse.che.ide.bookmarks.event` contains class of event that fires when bookmarks has been updated.
+* `org.eclipse.che.ide.bookmarks.event` contains class of event that fires when bookmarks have been updated.
 * `org.eclipse.che.ide.bookmarks.manager` contains classes of presenter that displays the list of stored bookmarks. As the Eclipse Che's client built using MVP pattern there is the presenter, the view and the implementation of view.
-* `org.eclipse.che.ide.bookmarks.resource` contains the resource marker and interceptor. Marker is the special object entity that provides additional information to the specific resource (file, folder or project). Interceptor is the some kind of filter which modifies the resource on the loading stage.
+* `org.eclipse.che.ide.bookmarks.resource` contains the resource marker and interceptor. Marker is the special object entity that provides additional information to the specific resource (file, folder or project). Interceptor is some kind of filter which modifies the resource on the loading stage.
 * `org.eclipse.che.ide.bookmarks.storage` contains the implementation of manager that operates with bookmarks.
 * `org.eclipse.che.ide.bookmarks.tree` contains the nodes which displays in bookmarks list.
 
-#### Detail view
+#### Detailed view
 
 ##### Actions
 
-Each plugin can customize Eclipse Che by adding new items to the menu and toolbars. The Eclipse Che provides the class [Action](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/action/Action.java). Extending this class you can override method `actionPerformed` and perform any actions when user activates action from the UI.
+Each plugin can customize Eclipse Che by adding new items to the menu and toolbars. Eclipse Che provides the class [Action](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/action/Action.java). Extending this class you can override method `actionPerformed` and perform any actions when user activates action from the UI.
 To create custom actions you should perform two steps:
 
 1. Define an action in plugin.
@@ -323,9 +323,9 @@ As the result you will see your registered actions on the UI:
 
 ##### Events
 
-Event can send the signal that specific component has changed own state or some action has performed. To create own event class [GwtEvent](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/GwtEvent.java) should be extended, simultaneously, with the event there is should be an event handler. Handlers should extend [EventHandler](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/EventHandler.java).
+Event can send the signal that specific component has changed its own state or some action has been performed. To create custom event class [GwtEvent](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/GwtEvent.java) should be extended, simultaneously, there is should be an event handler. Handler should extends [EventHandler](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/EventHandler.java).
 
-Example of GWT event base on `org.eclipse.che.ide.bookmarks.event.BookmarksUpdatedEvent`:
+Example of GWT event based on `org.eclipse.che.ide.bookmarks.event.BookmarksUpdatedEvent`:
 ```
 public class BookmarksUpdatedEvent extends GwtEvent<BookmarksUpdatedEvent.BookmarksUpdatedHandler> {
 
@@ -647,7 +647,7 @@ public class BookmarksStorageImpl implements BookmarksStorage,
     }
 }
 ```
-When path adds or removes from the storage, implementation sends a request to the [PreferencesManager](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/preferences/PreferencesManager.java) asynchronously to save bookmarks and fires event `org.eclipse.che.ide.bookmarks.event.BookmarksUpdatedEvent`.
+When path is added or removed from the storage, implementation sends a request to the [PreferencesManager](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/preferences/PreferencesManager.java) asynchronously to save bookmarks and fires event `org.eclipse.che.ide.bookmarks.event.BookmarksUpdatedEvent`.
 
 Finally, we will mark `org.eclipse.che.ide.bookmarks.storage.BookmarksStorage` with following annotation:
 ```
@@ -657,9 +657,9 @@ because we have the only one implementation.
 
 #### Parts
 
-In Eclipse Che each panel which is docked to specific region _(Tooling, Information, Editor, Navigation)_ calls part. In our case the part will be responsible for displaying bookmarks and will be located in the right side of IDE, in tooling segment.
+In Eclipse Che each panel which is docked to specific region _(Tooling, Information, Editor, Navigation)_ calls part. In our case, part will be responsible for displaying bookmarks and will be located in the right side of IDE, in tooling segment.
 
-As Eclipse Che built using MVP architecture, we need to create Presenter and View. Model will be our bookmark storage which was described in above section.
+As Eclipse Che build uses MVP architecture, we need to create Presenter and View. Model will be our bookmark storage which has been described in the above section.
 
 Example of `org.eclipse.che.ide.bookmarks.manager.BookmarksPresenter`:
 ```
@@ -763,7 +763,7 @@ public class BookmarksPresenter extends BasePresenter implements ActionDelegate,
 }
 ```
 
-Each part that should be displayed in the Eclipse Che should extends [BasePresenter](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BasePresenter.java).
+Each part displayed in the Eclipse Che should extend [BasePresenter](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BasePresenter.java).
 
 Example of `org.eclipse.che.ide.bookmarks.manager.BookmarksView`:
 ```
@@ -804,7 +804,7 @@ public interface BookmarksView extends View<BookmarksView.ActionDelegate> {
 ```
 
 Views should extend [View](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/mvp/View.java).
-Action delegate classes should extends [BaseActionDelegate](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BaseActionDelegate.java).
+Action delegate classes should extend [BaseActionDelegate](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BaseActionDelegate.java).
 
 Example of `org.eclipse.che.ide.bookmarks.manager.BookmarksViewImpl`:
 ```
@@ -841,7 +841,7 @@ public class BookmarksViewImpl extends BaseView<BookmarksView.ActionDelegate> im
 
 ```
 
-View implementations should extends [BaseView](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BaseView.java).
+View implementations should extend [BaseView](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BaseView.java).
 
 The result at this step you will see on below screenshot:
 
@@ -849,7 +849,7 @@ The result at this step you will see on below screenshot:
 
 #### Nodes
 
-To display the results of stored bookmarks there are two types of nodes used. Group node and Bookmark node.
+There are two types of nodes which are used to display the results of stored bookmarks: Group node and Bookmark node.
 
 Example of `org.eclipse.che.ide.bookmarks.tree.BookmarkGroupNode`:
 ```
@@ -1007,6 +1007,6 @@ Rebuild Eclipse Che with the plugin and see the result:
 
 ### Conclusion 
 
-So, you can see that creating custom plugins to extend Eclipse Che functionality is not difficult as it looks like. In one hour we created a custom plugin that manages bookmarks for the files and folders to help the user fast retrieve them in huge project.
+So, you can see that creating custom plugins to extend Eclipse Che functionality is not as difficult as it looks like. In one hour we have created a custom plugin that manages bookmarks for the files and folders to help the user retrieve them faster in huge project.
 
-Whole code of the given plugin you can find [there](https://github.com/vzhukovskii/che-bookmark-plugin).
+The complete code of the given plugin you can find [here](https://github.com/vzhukovskii/che-bookmark-plugin).
