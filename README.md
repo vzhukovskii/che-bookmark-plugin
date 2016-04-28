@@ -182,7 +182,7 @@ public class BookmarksExtension {
 }
 ```
 
-this class is responsible for the registering extension in the runtime. _Note, that each extension in the Eclipse Che marks with `@Extension` annotation._
+this class is responsible for the registering extension in the runtime. _Note, that each extension in the Eclipse Che marks with [Extension](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/extension/Extension.java) annotation._
 
 and
 
@@ -197,7 +197,7 @@ public class BookmarksGinModule extends AbstractGinModule {
 }
 ```
 
-this class is responsible for the registering base components in dependency management framework (Gin). _Note, that each class which is registers components to use in dependency management should be annotated with `@ExtensionGinModule` annotation._
+this class is responsible for the registering base components in dependency management framework (Gin). _Note, that each class which is registers components to use in dependency management should be annotated with [ExtensionGinModule](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/extension/ExtensionGinModule.java) annotation._
 
 Than, in `src/main/resources` we will create the following file:
 
@@ -848,3 +848,166 @@ View implementations should extends [BaseView](https://github.com/eclipse/che/bl
 
 The result at this step you will see on below screenshot:
 ![Empty part](https://files.slack.com/files-pri/T02G3VAG4-F14EKEXUJ/part.png?pub_secret=3d446c9af7)
+
+#### Nodes
+
+To display the results of stored bookmarks there are two types of nodes used. Group node and Bookmark node.
+
+Example of `org.eclipse.che.ide.bookmarks.tree.BookmarkGroupNode`:
+```
+public class BookmarkGroupNode extends SyntheticNode<Void> {
+
+    private final Path[]                        paths;
+    private final PromiseProvider               promises;
+    private final NodeFactory                   nodeFactory;
+    private final Workspace                     workspace;
+    private final BookmarksLocalizationConstant locale;
+    private final BookmarksResources resources;
+
+    @Inject
+    public BookmarkGroupNode(@Assisted Path[] paths,
+                             @Assisted NodeSettings nodeSettings,
+                             PromiseProvider promises,
+                             NodeFactory nodeFactory,
+                             Workspace workspace,
+                             BookmarksLocalizationConstant locale,
+                             BookmarksResources resources) {
+        super(null, nodeSettings);
+        this.paths = paths;
+        this.promises = promises;
+        this.nodeFactory = nodeFactory;
+        this.workspace = workspace;
+        this.locale = locale;
+        this.resources = resources;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected Promise<List<Node>> getChildrenImpl() {
+        if (paths == null || paths.length == 0) {
+            return promises.resolve(Collections.<Node>emptyList());
+        }
+
+        int maxDepth = paths[0].segmentCount();
+
+        for (int i = 1; i < paths.length; i++) {
+            if (maxDepth < paths[i].segmentCount()) {
+                maxDepth = paths[i].segmentCount();
+            }
+        }
+
+        return workspace.getWorkspaceRoot().getTree(maxDepth).then(new Function<Resource[], List<Node>>() {
+            @Override
+            public List<Node> apply(Resource[] resources) throws FunctionException {
+                final List<Node> nodes = newArrayListWithCapacity(paths.length);
+
+                for (Path path : paths) {
+                    for (Resource resource : resources) {
+                        if (resource.getLocation().equals(path)) {
+                            nodes.add(nodeFactory.newBookmarkNode(resource, getSettings()));
+                        }
+                    }
+                }
+
+                return nodes;
+            }
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void updatePresentation(@NotNull NodePresentation presentation) {
+        presentation.setPresentableText(locale.itemsMarked(paths != null ? paths.length : 0));
+        presentation.setPresentableIcon(resources.bookmarksIcon());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getName() {
+        return locale.bookmarks();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isLeaf() {
+        return false;
+    }
+
+    public interface NodeFactory {
+        BookmarkGroupNode newBookmarkGroupNode(Path[] paths, NodeSettings nodeSettings);
+
+        BookmarkNode newBookmarkNode(Resource resource, NodeSettings nodeSettings);
+    }
+}
+```
+
+Example of `org.eclipse.che.ide.bookmarks.tree.BookmarkNode`:
+```
+public class BookmarkNode extends ResourceNode<Resource> implements HasAction {
+
+    private final EventBus eventBus;
+    private final PromiseProvider promises;
+
+    @Inject
+    protected BookmarkNode(@Assisted Resource resource,
+                           @Assisted NodeSettings nodeSettings,
+                           NodesResources nodesResources,
+                           NodeFactory nodeFactory,
+                           EventBus eventBus,
+                           Set<NodeIconProvider> nodeIconProviders,
+                           PromiseProvider promises) {
+        super(resource, nodeSettings, nodesResources, nodeFactory, eventBus, nodeIconProviders);
+        this.eventBus = eventBus;
+        this.promises = promises;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean isLeaf() {
+        return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected Promise<List<Node>> getChildrenImpl() {
+        return promises.resolve(Collections.<Node>emptyList());
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void updatePresentation(@NotNull NodePresentation presentation) {
+        super.updatePresentation(presentation);
+
+        presentation.setInfoText(getData().getLocation().parent().toString());
+        presentation.setInfoTextWrapper(Pair.of("(", ")"));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void actionPerformed() {
+        if (getData().getResourceType() == Resource.FILE) {
+            eventBus.fireEvent(new FileEvent((File)getData(), OPEN));
+        } else {
+            eventBus.fireEvent(new RevealResourceEvent(getData()));
+        }
+    }
+}
+```
+
+Finally we will modify the `org.eclipse.che.ide.bookmarks.BookmarksGinModule` by binding components:
+```
+@Override
+protected void configure() {
+    install(new GinFactoryModuleBuilder().build(NodeFactory.class));
+    GinMultibinder.newSetBinder(binder(), ResourceInterceptor.class).addBinding().to(BookmarksInterceptor.class);
+}
+```
+
+Rebuild Eclipse Che with the plugin and see the result:
+![Result](https://files.slack.com/files-pri/T02G3VAG4-F14E4V5EY/result.png?pub_secret=0c05365b23)
+
+### Conclusion 
+
+So, you can see that creating custom plugins to extend Eclipse Che functionality is not difficult as it looks like. In one hour we created a custom plugin that manages bookmarks for the files and folders to help the user fast retrieve them in huge project.
+
+Whole code of the given plugin you can find [there](https://github.com/vzhukovskii/che-bookmark-plugin).
