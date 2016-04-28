@@ -321,6 +321,9 @@ public class BookmarksExtension {
 }
 ```
 
+As the result you will see your registered actions on the UI:
+![Actions](https://files.slack.com/files-pri/T02G3VAG4-F14E9LSJ1/actions.png?pub_secret=741c0f8408)
+
 ##### Events
 
 Event can send the signal that specific component has changed own state or some action has performed. To create own event class [GwtEvent](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/GwtEvent.java) should be extended, simultaneously, with event there is should be a event handler. Handler should extends [EventHandler](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/EventHandler.java).
@@ -369,5 +372,479 @@ public class BookmarksUpdatedEvent extends GwtEvent<BookmarksUpdatedEvent.Bookma
 
 To handle specific events method [EventBus#addHandler](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/web/bindery/event/shared/EventBus.java#L66) should be called. _Note, that EventBus should be injected to be able to subscribe listening to the events._
 
+Example of handling event:
+```
+public class Foo implements BookmarksUpdatedHandler {
+    @Inject
+    public Foo(EventBus eventBus) {
+        eventBus.addHandler(BookmarksUpdatedEvent.getType(), this);
+    }
+    
+    @Override
+    public void onBookmarksUpdated(BookmarksUpdatedEvent event) {
+        //do something on event
+    }
+}
+```
 
+#### Storage
 
+As we need some kind of storage we will create an interface with necessary methods and it's implementation. This storage will be injected into other components which want to operate with the bookmarks.
+
+Example of `org.eclipse.che.ide.bookmarks.storage.BookmarksStorage`:
+```
+public interface BookmarksStorage {
+
+    /**
+     * Adds the new path to the storage.
+     *
+     * @param path
+     *         the path to mark as bookmark
+     * @return true if the path has added, otherwise false
+     * @see Path
+     */
+    boolean add(Path path);
+
+    /**
+     * Removes the given path from the storage.
+     *
+     * @param path
+     *         the path to remove from the bookmarks
+     * @return true if path has removed, otherwise false
+     * @see Path
+     */
+    boolean remove(Path path);
+
+    /**
+     * Returns all stored paths in the storage.
+     *
+     * @return the path array
+     * @see Path
+     */
+    Path[] getAll();
+
+    /**
+     * Checks whether given path is stored in the bookmarks storage.
+     *
+     * @param path
+     *         the path to check
+     * @return true if path was stored in the bookmarks storage
+     */
+    boolean contains(Path path);
+}
+```
+See the javadoc of Path.java [here](https://github.com/eclipse/che/blob/master/core/commons/che-core-commons-gwt/src/main/java/org/eclipse/che/ide/resource/Path.java).
+
+Example of implementation above interface, `org.eclipse.che.ide.bookmarks.storage.BookmarksStorageImpl`:
+```
+@Singleton
+public class BookmarksStorageImpl implements BookmarksStorage,
+                                             ResourceChangedHandler,
+                                             MarkerChangedHandler,
+                                             WorkspaceReadyHandler,
+                                             WsAgentStateHandler {
+
+    private final PreferencesManager preferencesManager;
+    private final EventBus           eventBus;
+
+    private Path[] bookmarks;
+
+    private static final Path[] EMPTY_BOOKMARKS = new Path[0];
+    private static final char   DIVIDER         = '|';
+
+    private Promise<Void> flushPromise;
+
+    @Inject
+    public BookmarksStorageImpl(PreferencesManager preferencesManager,
+                                EventBus eventBus,
+                                PromiseProvider promises) {
+        this.preferencesManager = preferencesManager;
+        this.eventBus = eventBus;
+
+        eventBus.addHandler(ResourceChangedEvent.getType(), this);
+        eventBus.addHandler(MarkerChangedEvent.getType(), this);
+
+        eventBus.addHandler(WorkspaceReadyEvent.getType(), this);
+        eventBus.addHandler(WsAgentStateEvent.TYPE, this);
+
+        flushPromise = promises.resolve(null);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean add(Path path) {
+        checkState(bookmarks != null);
+
+        if (Arrays.contains(bookmarks, path)) {
+            return false;
+        }
+
+        bookmarks = Arrays.add(bookmarks, path);
+
+        fireUpdatedEvent();
+        flushStorage();
+
+        return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean remove(Path path) {
+        checkState(bookmarks != null);
+
+        if (!Arrays.contains(bookmarks, path)) {
+            return false;
+        }
+
+        bookmarks = Arrays.remove(bookmarks, path);
+
+        fireUpdatedEvent();
+        flushStorage();
+
+        return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public Path[] getAll() {
+        checkState(bookmarks != null);
+
+        return bookmarks;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean contains(Path path) {
+        return bookmarks != null && Arrays.contains(bookmarks, path);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onResourceChanged(ResourceChangedEvent event) {
+        final ResourceDelta delta = event.getDelta();
+
+        if ((delta.getFlags() & (MOVED_FROM | MOVED_TO)) != 0) {
+            onResourceMoved(delta);
+        } else if (delta.getKind() == REMOVED) {
+            onResourceRemoved(delta);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onMarkerChanged(MarkerChangedEvent event) {
+        if (event.getMarker().getType().equals(BookmarkMarker.ID)) {
+            onMarkerChanged(event.getStatus(), event.getResource());
+        }
+    }
+
+    protected void onResourceMoved(ResourceDelta delta) {
+        if (Arrays.contains(bookmarks, delta.getFromPath())) {
+
+            bookmarks = Arrays.remove(bookmarks, delta.getFromPath());
+            bookmarks = Arrays.add(bookmarks, delta.getToPath());
+
+            fireUpdatedEvent();
+            flushStorage();
+        }
+    }
+
+    protected void onResourceRemoved(ResourceDelta delta) {
+        final Resource resource = delta.getResource();
+
+        if (contains(resource.getLocation())) {
+            remove(resource.getLocation());
+        }
+    }
+
+    protected void onMarkerChanged(int status, Resource resource) {
+        switch (status) {
+            case Marker.CREATED:
+                add(resource.getLocation());
+                break;
+            case Marker.REMOVED:
+                remove(resource.getLocation());
+                break;
+            case Marker.UPDATED:
+                fireUpdatedEvent();
+                break;
+        }
+    }
+
+    protected void initStorage() {
+        final String rawString = preferencesManager.getValue(PREF_KEY);
+
+        if (isNullOrEmpty(rawString)) {
+            bookmarks = EMPTY_BOOKMARKS;
+        }
+
+        bookmarks = decode(rawString);
+
+        fireUpdatedEvent();
+    }
+
+    protected String encode(Path[] resources) {
+        StringBuilder rawString = new StringBuilder();
+
+        for (int i = 0; i < resources.length; i++) {
+            rawString.append(resources[i].toString());
+
+            if (i != resources.length - 1) {
+                rawString.append(DIVIDER);
+            }
+        }
+
+        return rawString.toString();
+    }
+
+    protected Path[] decode(String rawString) {
+        Path[] paths = new Path[0];
+
+        Iterable<String> strings = Splitter.on(DIVIDER).omitEmptyStrings().split(rawString);
+
+        for (String s : strings) {
+            if (Path.isValidPath(s)) {
+                final int index = paths.length;
+                paths = copyOf(paths, index + 1);
+                paths[index] = Path.valueOf(s);
+            } else {
+                Log.info(this.getClass(), "Failed to deserialize path '" + s + "'.");
+            }
+        }
+
+        return paths;
+    }
+
+    protected void flushStorage() {
+        checkState(bookmarks != null);
+
+        flushPromise.thenPromise(new Function<Void, Promise<Void>>() {
+            public Promise<Void> apply(Void arg) throws FunctionException {
+                preferencesManager.setValue(BookmarksExtension.PREF_KEY, encode(bookmarks));
+
+                return preferencesManager.flushPreferences();
+            }
+        });
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onWorkspaceReady(WorkspaceReadyEvent event) {
+        initStorage();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onWsAgentStarted(WsAgentStateEvent event) {
+        //do nothing
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onWsAgentStopped(WsAgentStateEvent event) {
+        bookmarks = null;
+    }
+
+    protected void fireUpdatedEvent() {
+        eventBus.fireEvent(new BookmarksUpdatedEvent());
+    }
+}
+```
+When path adds or removes from the storage, implementation sends a request to the [PreferencesManager](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/preferences/PreferencesManager.java) asynchronously to save bookmarks and fires event `BookmarksUpdatedEvent`.
+
+Finally, we will mark `org.eclipse.che.ide.bookmarks.storage.BookmarksStorage` with following annotation:
+```
+@ImplementedBy(BookmarksStorageImpl.class)
+```
+because we have the only one implementation.
+
+#### Parts
+
+In Eclipse Che each panel which is docked to specific region (Tooling, Information, Editor, Navigation) calls part. In our case the part will be responsible for displaying bookmarks and will be located in the right side of IDE, in tooling segment.
+
+As Eclipse Che built built using MVP architecture, we need to create Presenter and View. Model will be our bookmark storage which was described in above section.
+
+Example of `org.eclipse.che.ide.bookmarks.manager.BookmarksPresenter`:
+```
+@Singleton
+public class BookmarksPresenter extends BasePresenter implements ActionDelegate, BookmarksUpdatedHandler {
+
+    private final BookmarksView                 view;
+    private final BookmarksStorage              bmStorage;
+    private final NodeFactory                   nodeFactory;
+    private final SettingsProvider              settingsProvider;
+    private final WorkspaceAgent                workspaceAgent;
+    private final BookmarksLocalizationConstant locale;
+
+    @Inject
+    public BookmarksPresenter(BookmarksView view,
+                              BookmarksStorage bmStorage,
+                              EventBus eventBus,
+                              SettingsProvider settingsProvider,
+                              NodeFactory nodeFactory,
+                              WorkspaceAgent workspaceAgent,
+                              BookmarksLocalizationConstant locale) {
+        this.view = view;
+        this.bmStorage = bmStorage;
+        this.nodeFactory = nodeFactory;
+        this.settingsProvider = settingsProvider;
+        this.workspaceAgent = workspaceAgent;
+        this.locale = locale;
+        this.view.setDelegate(this);
+
+        workspaceAgent.getPartStack(PartStackType.TOOLING).addPart(this);
+
+        eventBus.addHandler(BookmarksUpdatedEvent.getType(), this);
+    }
+
+    /**
+     * Shows panel if it hasn't displayed yet or activate the las one if it isn't in focus.
+     */
+    public void show() {
+        final PartPresenter activePart = partStack.getActivePart();
+
+        if (activePart != null && activePart.equals(this)) {
+            workspaceAgent.hidePart(this);
+            return;
+        }
+
+        refreshView();
+        workspaceAgent.setActivePart(this, PartStackType.TOOLING);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getTitle() {
+        return locale.bookmarks();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void setVisible(boolean visible) {
+        view.setVisible(visible);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public IsWidget getView() {
+        return view;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public String getTitleToolTip() {
+        return locale.bookmarksTitle();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void go(AcceptsOneWidget container) {
+        container.setWidget(view);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onSelectionChanged(List<Node> nodes) {
+        setSelection(new Selection<>(nodes));
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void onBookmarksUpdated(BookmarksUpdatedEvent event) {
+        refreshView();
+    }
+
+    /**
+     * Refresh the bookmarks list in the view.
+     */
+    protected void refreshView() {
+        final Path[] paths = bmStorage.getAll();
+        final NodeSettings settings = settingsProvider.getSettings();
+
+        view.setBookmarks(Collections.<Node>singletonList(nodeFactory.newBookmarkGroupNode(paths, settings)));
+    }
+}
+```
+
+Each part that should be displayed in the Eclipse Che should extends [BasePresenter](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BasePresenter.java).
+
+Example of 'org.eclipse.che.ide.bookmarks.manager.BookmarksView':
+```
+@ImplementedBy(BookmarksViewImpl.class)
+public interface BookmarksView extends View<BookmarksView.ActionDelegate> {
+
+    /**
+     * Sets the bookmarks list in the tree widget.
+     *
+     * @param nodes
+     *         bookmark nodes
+     */
+    void setBookmarks(List<Node> nodes);
+
+    /**
+     * Sets the visibility status of current view.
+     *
+     * @param visible
+     *         true if vew should be visible, otherwise false
+     */
+    void setVisible(boolean visible);
+
+    /**
+     * Interface for delegating events and signals from the view to the bound presenter.
+     */
+    interface ActionDelegate extends BaseActionDelegate {
+
+        /**
+         * Performs any operations when selection has changed.
+         *
+         * @param nodes
+         *         nodes which has provided in new selection
+         */
+        void onSelectionChanged(List<Node> nodes);
+    }
+
+}
+```
+
+Views should extend [View](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/mvp/View.java).
+Action delegate classes should extends [BaseActionDelegate](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BaseActionDelegate.java).
+
+Example of `org.eclipse.che.ide.bookmarks.manager.BookmarksViewImpl`:
+```
+@Singleton
+public class BookmarksViewImpl extends BaseView<BookmarksView.ActionDelegate> implements BookmarksView {
+
+    private Tree tree;
+
+    @Inject
+    public BookmarksViewImpl(PartStackUIResources resources, BookmarksLocalizationConstant locale) {
+        super(resources);
+
+        setTitle(locale.bookmarks());
+
+        tree = new Tree(new NodeStorage(), new NodeLoader(Collections.<NodeInterceptor>emptySet()));
+        tree.getSelectionModel().addSelectionChangedHandler(new SelectionChangedEvent.SelectionChangedHandler() {
+            public void onSelectionChanged(SelectionChangedEvent event) {
+                delegate.onSelectionChanged(event.getSelection());
+            }
+        });
+        tree.setAutoSelect(true);
+
+        setContentWidget(tree);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void setBookmarks(List<Node> nodes) {
+        tree.getNodeStorage().clear();
+        tree.getNodeStorage().add(nodes);
+        tree.expandAll();
+    }
+}
+
+```
+
+View implementations should extends [BaseView](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BaseView.java).
+
+The result at this step you will see on below screenshot:
+![Empty part](https://files.slack.com/files-pri/T02G3VAG4-F14EKEXUJ/part.png?pub_secret=3d446c9af7)
