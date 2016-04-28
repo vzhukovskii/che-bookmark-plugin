@@ -15,7 +15,7 @@ Client side - is a GWT application written in java, but then compiled into javas
 
 #### Plugin Structure
 
-To find out how plugins are arranged in the Eclipse Che you can visit official repository ([plugins](https://github.com/eclipse/che/tree/master/plugins)) and see how they have been made. There are a few predefined plugins.
+To find out how plugins are arranged in the Eclipse Che you can visit official repository ([plugins](https://github.com/eclipse/che/tree/master/plugins)) and see how they have been made. There are few predefined plugins.
 
 But we will start from the scratch. For this we will create an empty maven project and define parent and dependency management in the `pom.xml`
 
