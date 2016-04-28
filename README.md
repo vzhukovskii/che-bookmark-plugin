@@ -219,7 +219,7 @@ Than, in `src/main/resources` we will create the following file:
 </module>
 ```
 
-current file is includes into GWT compilation to allow link client side code with core application.
+Current file is includes into GWT compilation to allow link client side code with core application.
 
 Than we should clone the sources of Eclipse Che ([link](https://github.com/eclipse/che)) and register our plugin into compilation phase by adding maven dependency in `/che/assembly/assembly-ide-war/pom.xml` and registering our `Bookmarks.gwt.xml` in GWT compilation by adding:
 ```
@@ -234,7 +234,7 @@ This is the minimum needed to create an empty plugin in Eclipse Che.
 
 #### Developing the plugin
 
-Lets create the few additional classes which will manage bookmarks.
+Lets create a few additional classes which will manage bookmarks.
 
 ![asd](https://files.slack.com/files-pri/T02G3VAG4-F14628Y2U/project_structure.png?pub_secret=6ffb8c9399)
 
@@ -246,8 +246,6 @@ Here are the descriptions of each subpackage:
 * `org.eclipse.che.ide.bookmarks.resource` contains the resource marker and interceptor. Marker is the special object entity that provides additional information to the specific resource (file, folder or project). Interceptor is the some kind of filter which modifies the resource on the loading stage.
 * `org.eclipse.che.ide.bookmarks.storage` contains the implementation of manager that operates with bookmarks.
 * `org.eclipse.che.ide.bookmarks.tree` contains the nodes which displays in bookmarks list.
-
-The full code is available in the [repository](https://github.com/vzhukovskii/che-bookmark-plugin).
 
 #### Detail view
 
@@ -287,8 +285,8 @@ public class ShowBookmarksAction extends AbstractPerspectiveAction {
 }
 ```
 
-By overriding `updateInPerspective` action can supply specific rules when it should be showed.
-By overriding `actionPerformed` action performs developer instructions. In this case we are showing the bookmark panel on the UI.
+By overriding `updateInPerspective` method, action can supply specific rules when it should be showed.
+By overriding `actionPerformed` method, action performs developer instructions. In this case we are showing the bookmark panel on the UI.
 
 To register action class [ActionManager](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/action/ActionManager.java) should be used.
 
@@ -322,13 +320,14 @@ public class BookmarksExtension {
 ```
 
 As the result you will see your registered actions on the UI:
+
 ![Actions](https://files.slack.com/files-pri/T02G3VAG4-F14E9LSJ1/actions.png?pub_secret=741c0f8408)
 
 ##### Events
 
 Event can send the signal that specific component has changed own state or some action has performed. To create own event class [GwtEvent](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/GwtEvent.java) should be extended, simultaneously, with event there is should be a event handler. Handler should extends [EventHandler](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/EventHandler.java).
 
-Example of GWT event base on `BookmarksUpdatedEvent`:
+Example of GWT event base on `org.eclipse.che.ide.bookmarks.event.BookmarksUpdatedEvent`:
 ```
 public class BookmarksUpdatedEvent extends GwtEvent<BookmarksUpdatedEvent.BookmarksUpdatedHandler> {
 
@@ -433,7 +432,7 @@ public interface BookmarksStorage {
     boolean contains(Path path);
 }
 ```
-See the javadoc of Path.java [here](https://github.com/eclipse/che/blob/master/core/commons/che-core-commons-gwt/src/main/java/org/eclipse/che/ide/resource/Path.java).
+See the javadoc of [Path](https://github.com/eclipse/che/blob/master/core/commons/che-core-commons-gwt/src/main/java/org/eclipse/che/ide/resource/Path.java).
 
 Example of implementation above interface, `org.eclipse.che.ide.bookmarks.storage.BookmarksStorageImpl`:
 ```
@@ -650,7 +649,7 @@ public class BookmarksStorageImpl implements BookmarksStorage,
     }
 }
 ```
-When path adds or removes from the storage, implementation sends a request to the [PreferencesManager](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/preferences/PreferencesManager.java) asynchronously to save bookmarks and fires event `BookmarksUpdatedEvent`.
+When path adds or removes from the storage, implementation sends a request to the [PreferencesManager](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/preferences/PreferencesManager.java) asynchronously to save bookmarks and fires event `org.eclipse.che.ide.bookmarks.event.BookmarksUpdatedEvent`.
 
 Finally, we will mark `org.eclipse.che.ide.bookmarks.storage.BookmarksStorage` with following annotation:
 ```
@@ -660,9 +659,9 @@ because we have the only one implementation.
 
 #### Parts
 
-In Eclipse Che each panel which is docked to specific region (Tooling, Information, Editor, Navigation) calls part. In our case the part will be responsible for displaying bookmarks and will be located in the right side of IDE, in tooling segment.
+In Eclipse Che each panel which is docked to specific region _(Tooling, Information, Editor, Navigation)_ calls part. In our case the part will be responsible for displaying bookmarks and will be located in the right side of IDE, in tooling segment.
 
-As Eclipse Che built built using MVP architecture, we need to create Presenter and View. Model will be our bookmark storage which was described in above section.
+As Eclipse Che built using MVP architecture, we need to create Presenter and View. Model will be our bookmark storage which was described in above section.
 
 Example of `org.eclipse.che.ide.bookmarks.manager.BookmarksPresenter`:
 ```
@@ -768,7 +767,7 @@ public class BookmarksPresenter extends BasePresenter implements ActionDelegate,
 
 Each part that should be displayed in the Eclipse Che should extends [BasePresenter](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BasePresenter.java).
 
-Example of 'org.eclipse.che.ide.bookmarks.manager.BookmarksView':
+Example of `org.eclipse.che.ide.bookmarks.manager.BookmarksView`:
 ```
 @ImplementedBy(BookmarksViewImpl.class)
 public interface BookmarksView extends View<BookmarksView.ActionDelegate> {
@@ -847,6 +846,7 @@ public class BookmarksViewImpl extends BaseView<BookmarksView.ActionDelegate> im
 View implementations should extends [BaseView](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/parts/base/BaseView.java).
 
 The result at this step you will see on below screenshot:
+
 ![Empty part](https://files.slack.com/files-pri/T02G3VAG4-F14EKEXUJ/part.png?pub_secret=3d446c9af7)
 
 #### Nodes
@@ -1004,6 +1004,7 @@ protected void configure() {
 ```
 
 Rebuild Eclipse Che with the plugin and see the result:
+
 ![Result](https://files.slack.com/files-pri/T02G3VAG4-F14E4V5EY/result.png?pub_secret=0c05365b23)
 
 ### Conclusion 
