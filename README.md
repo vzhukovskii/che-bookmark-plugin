@@ -11,7 +11,7 @@ Any IDE may be used while developing, but we will use Eclipse Che.
 So, let's do that together.
 
 Before starting to develop the new plugin, you should understand, that architecturally Eclipse Che consists of two parts, client side and server side.
-Client side - is a GWT application written in java, but then compiled into javascript. So you should take into account, that not all java functions are available. If you are not sure that some functionality correctly emulates in GWT, than you should check official documentation ([JRE Emulation Reference](http://www.gwtproject.org/doc/latest/RefJreEmulation.html))
+Client side - is a GWT application written in java, but then compiled into javascript. So you should take into account, that not all java functions are available. If you are not sure that some functionality correctly emulates in GWT, then you should check official documentation ([JRE Emulation Reference](http://www.gwtproject.org/doc/latest/RefJreEmulation.html))
 
 #### Plugin Structure
 
@@ -219,7 +219,7 @@ Then, in `src/main/resources` we will create the following file:
 
 Current file is included into GWT compilation to allow linking client side code with core application.
 
-Than we should clone Eclipse Che ([sources](https://github.com/eclipse/che)) and register our plugin into compilation phase by adding maven dependency in `/che/assembly/assembly-ide-war/pom.xml` and registering our `Bookmarks.gwt.xml` in GWT compilation by adding:
+Then we should clone Eclipse Che ([sources](https://github.com/eclipse/che)) and register our plugin into compilation phase by adding maven dependency in `/che/assembly/assembly-ide-war/pom.xml` and registering our `Bookmarks.gwt.xml` in GWT compilation by adding:
 ```
 ...
 <inherits name='org.eclipse.che.ide.bookmarks.Bookmarks'/>
