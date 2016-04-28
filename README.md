@@ -173,7 +173,7 @@ Here you can see the `pom.xml` content:
 
 In `src/main/java` we will create two base classes:
 
-`org.eclipse.che.ide.bookmarks.BookmarksExtension`
+`org.eclipse.che.ide.bookmarks.BookmarksExtension`:
 ```
 @Singleton
 @Extension(title = "Bookmarks", version = "1.0")
@@ -182,11 +182,9 @@ public class BookmarksExtension {
 }
 ```
 
-this class is responsible for the registering extension in the runtime. _Note, that each extension in the Eclipse Che marks with [Extension](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/extension/Extension.java) annotation._
+this class is responsible for the registering extension in the runtime. _Note, that each extension in the Eclipse Che should be marked with [Extension](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/extension/Extension.java) annotation._
 
-and
-
-`org.eclipse.che.ide.bookmarks.BookmarksGinModule`
+And `org.eclipse.che.ide.bookmarks.BookmarksGinModule`:
 ```
 @ExtensionGinModule
 public class BookmarksGinModule extends AbstractGinModule {
@@ -197,7 +195,7 @@ public class BookmarksGinModule extends AbstractGinModule {
 }
 ```
 
-this class is responsible for the registering base components in dependency management framework (Gin). _Note, that each class which is registers components to use in dependency management should be annotated with [ExtensionGinModule](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/extension/ExtensionGinModule.java) annotation._
+This class is responsible for the registering base components in dependency management framework (Gin). _Note, that each class which registers components to use in dependency management should be annotated with [ExtensionGinModule](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/extension/ExtensionGinModule.java) annotation._
 
 Than, in `src/main/resources` we will create the following file:
 
@@ -219,7 +217,7 @@ Than, in `src/main/resources` we will create the following file:
 </module>
 ```
 
-Current file is includes into GWT compilation to allow link client side code with core application.
+Current file is included into GWT compilation to allow link client side code with core application.
 
 Than we should clone the sources of Eclipse Che ([link](https://github.com/eclipse/che)) and register our plugin into compilation phase by adding maven dependency in `/che/assembly/assembly-ide-war/pom.xml` and registering our `Bookmarks.gwt.xml` in GWT compilation by adding:
 ```
@@ -290,7 +288,7 @@ By overriding `actionPerformed` method, action performs developer instructions. 
 
 To register action class [ActionManager](https://github.com/eclipse/che/blob/master/core/ide/che-core-ide-api/src/main/java/org/eclipse/che/ide/api/action/ActionManager.java) should be used.
 
-Example of registering actions and placing them in the system menus. In `org.eclipse.che.ide.bookmarks.BookmarksExtension` we will add the following code:
+Example of registering actions and placing them into the system menu. In `org.eclipse.che.ide.bookmarks.BookmarksExtension` we will add the following code:
 ```
 @Singleton
 public class BookmarksExtension {
@@ -325,7 +323,7 @@ As the result you will see your registered actions on the UI:
 
 ##### Events
 
-Event can send the signal that specific component has changed own state or some action has performed. To create own event class [GwtEvent](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/GwtEvent.java) should be extended, simultaneously, with event there is should be a event handler. Handler should extends [EventHandler](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/EventHandler.java).
+Event can send the signal that specific component has changed own state or some action has performed. To create own event class [GwtEvent](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/GwtEvent.java) should be extended, simultaneously, with the event there is should be an event handler. Handlers should extend [EventHandler](https://github.com/gwtproject/gwt/blob/2.7.0/user/src/com/google/gwt/event/shared/EventHandler.java).
 
 Example of GWT event base on `org.eclipse.che.ide.bookmarks.event.BookmarksUpdatedEvent`:
 ```
@@ -388,7 +386,7 @@ public class Foo implements BookmarksUpdatedHandler {
 
 #### Storage
 
-As we need some kind of storage we will create an interface with necessary methods and it's implementation. This storage will be injected into other components which want to operate with the bookmarks.
+As we need some kind of storage, we will create an interface with necessary methods and it's implementation. This storage will be injected into other components which want to operate with the bookmarks.
 
 Example of `org.eclipse.che.ide.bookmarks.storage.BookmarksStorage`:
 ```
